@@ -28,31 +28,32 @@ Based on the baseline valuation date (`2026-10-31`) across 5 global commodities 
 
 ---
 
-## Solution Architecture & Data Pipeline
+## Data Flow
 
-```text
-┌─────────────────────────────┐      ┌──────────────────────────────────┐
-│   World Bank "Pink Sheet"   │      │   Internal Procurement Tables    │
-│  (Monthly Spot Prices: CPO, │      │  • Dim_Commodity  • Dim_SKU      │
-│   Brent, Copper, Alum, Wheat)│      │  • Fact_BOM       • Fact_Contracts│
-└──────────────┬──────────────┘      └────────────────┬─────────────────┘
-               │                                      │
-               ▼                                      ▼
-┌───────────────────────────────────────────────────────────────────────┐
-│                  EXCEL FINANCIAL & SENSITIVITY ENGINE                 │
-│  1. Power Query ETL: Unpivots spot prices, computes MoM % swings &    │
-│     Rolling 12-Period Annualized Volatility (Fact_Prices)             │
-│  2. Dynamic Array Cost & Margin Engine: LET, XLOOKUP, MAP, BYROW      │
-│  3. 2-Way What-If Data Table: 7×3 Stress-Test Matrix (bps heatmap)    │
-└──────────────────────────────────┬────────────────────────────────────┘
-                                   │
-                                   ▼
-┌───────────────────────────────────────────────────────────────────────┐
-│                   POWER BI EXECUTIVE REPORTING LAYER                  │
-│  • Star Schema Data Model (1:* relationships + disconnected slicers)  │
-│  • 8 Custom DAX Measures for dynamic scenario & margin attribution    │
-│  • Interactive Executive Dashboard with isolated 13×9 heatmap matrix  │
-└───────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    subgraph Sources["1. Data Sources"]
+        WB["<b>World Bank 'Pink Sheet'</b><br/>Monthly Spot Prices: CPO, Brent,<br/>Copper, Aluminum, Wheat"]
+        ERP["<b>Internal Procurement Tables</b><br/>Dim_Commodity • Dim_SKU<br/>Fact_BOM • Fact_Contracts"]
+    end
+
+    subgraph Excel["2. Excel Costing Engine"]
+        PQ["<b>Power Query ETL</b><br/>Unpivots spot prices, computes MoM % swings<br/>& Rolling 12-Period Annualized Volatility (Fact_Prices)"]
+        DA["<b>Dynamic Array Engine</b><br/>LET, XLOOKUP, MAP, BYROW for unit & SKU costs"]
+        WT["<b>2-Way What-If Data Table</b><br/>7×3 Stress-Test Matrix (bps heatmap)"]
+        PQ --> DA --> WT
+    end
+
+    subgraph PowerBI["3. Power BI Report"]
+        SS["<b>Star Schema Model</b><br/>1:* relationships + disconnected parameters"]
+        DAX["<b>8 Custom DAX Measures</b><br/>Live scenario & margin calculations"]
+        DB["<b>Executive Dashboard</b><br/>Interactive sliders + locked 13×9 sensitivity heatmap"]
+        SS --> DAX --> DB
+    end
+
+    WB --> PQ
+    ERP --> DA
+    WT --> SS
 ```
 
 ---
