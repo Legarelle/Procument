@@ -31,29 +31,43 @@ Based on the baseline valuation date (`2026-10-31`) across 5 global commodities 
 ## Data Flow
 
 ```mermaid
-flowchart TD
-    subgraph Sources["1. Data Sources"]
-        WB["<b>World Bank 'Pink Sheet'</b><br/>Monthly Spot Prices: CPO, Brent,<br/>Copper, Aluminum, Wheat"]
-        ERP["<b>Internal Procurement Tables</b><br/>Dim_Commodity • Dim_SKU<br/>Fact_BOM • Fact_Contracts"]
+%%{init: {'theme': 'base', 'themeVariables': { 'lineColor': '#8b949e', 'fontFamily': 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif'}}}%%
+flowchart LR
+    subgraph Sources["<b>1. DATA SOURCES</b>"]
+        direction TB
+        WB["<b>World Bank 'Pink Sheet'</b><br/>Monthly Spot Prices: CPO, Brent,<br/>Copper, Aluminum & Wheat"]
+        ERP["<b>Internal ERP Tables</b><br/>Dim_Commodity • Dim_SKU<br/>Fact_BOM • Fact_Contracts"]
     end
 
-    subgraph Excel["2. Excel Costing Engine"]
-        PQ["<b>Power Query ETL</b><br/>Unpivots spot prices, computes MoM % swings<br/>& Rolling 12-Period Annualized Volatility (Fact_Prices)"]
-        DA["<b>Dynamic Array Engine</b><br/>LET, XLOOKUP, MAP, BYROW for unit & SKU costs"]
-        WT["<b>2-Way What-If Data Table</b><br/>7×3 Stress-Test Matrix (bps heatmap)"]
+    subgraph Excel["<b>2. EXCEL COSTING ENGINE</b>"]
+        direction TB
+        PQ["<b>Power Query ETL</b><br/>Unpivots prices, MoM % swings<br/>& 12-Period Ann. Volatility"]
+        DA["<b>Dynamic Array Engine</b><br/>LET, XLOOKUP, MAP & BYROW<br/>for unit & SKU margin math"]
+        WT["<b>2-Way What-If Data Table</b><br/>7×3 stress-test matrix (bps)"]
         PQ --> DA --> WT
     end
 
-    subgraph PowerBI["3. Power BI Report"]
-        SS["<b>Star Schema Model</b><br/>1:* relationships + disconnected parameters"]
-        DAX["<b>8 Custom DAX Measures</b><br/>Live scenario & margin calculations"]
-        DB["<b>Executive Dashboard</b><br/>Interactive sliders + locked 13×9 sensitivity heatmap"]
+    subgraph PowerBI["<b>3. POWER BI REPORT</b>"]
+        direction TB
+        SS["<b>Star Schema Model</b><br/>1:* relationships + disconnected<br/>What-If parameter tables"]
+        DAX["<b>8 Custom DAX Measures</b><br/>Dynamic shock & hedge attribution"]
+        DB["<b>Executive Dashboard</b><br/>Interactive sliders + isolated<br/>13×9 sensitivity heatmap"]
         SS --> DAX --> DB
     end
 
-    WB --> PQ
-    ERP --> DA
-    WT --> SS
+    Sources ==> Excel ==> PowerBI
+
+    classDef sourceStyle fill:#0f172a,stroke:#38bdf8,stroke-width:1.5px,color:#f8fafc
+    classDef excelStyle fill:#052e16,stroke:#22c55e,stroke-width:1.5px,color:#f0fdf4
+    classDef pbiStyle fill:#422006,stroke:#f59e0b,stroke-width:1.5px,color:#fffbeb
+
+    class WB,ERP sourceStyle
+    class PQ,DA,WT excelStyle
+    class SS,DAX,DB pbiStyle
+
+    style Sources fill:#0d1117,stroke:#38bdf8,stroke-width:1px,stroke-dasharray:4 4,color:#7dd3fc
+    style Excel fill:#0d1117,stroke:#22c55e,stroke-width:1px,stroke-dasharray:4 4,color:#86efac
+    style PowerBI fill:#0d1117,stroke:#f59e0b,stroke-width:1px,stroke-dasharray:4 4,color:#fcd34d
 ```
 
 ---
